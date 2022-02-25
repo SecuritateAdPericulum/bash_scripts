@@ -772,7 +772,7 @@ then
           * ) echo echo -e "\033[31mPlease answer yes or no.\033[0m";;
     esac
   done
-  arr_new_list=(cockpit dhcp dhcpv6-client dns docker-registry docker-swarm http https samba samba-client ssh syslog zabbix-agent)
+  arr_new_list=(cockpit dhcp dhcpv6-client dns docker-registry docker-swarm git grafana http https imap imaps iscsi-target jenkins kibana ldap ldaps mongodb mssql mysql pop3 pop3s postgresql samba samba-client ssh smtp smtps syslog telnet tftp tftp-client zabbix-agent)
   s_list=$(sudo firewall-cmd --list-services)
   eval "arr_list=($s_list)"
   eq_list=$(echo ${arr_list[@]} ${arr_new_list[@]} | tr ' ' '\n' | sort | uniq -u)
