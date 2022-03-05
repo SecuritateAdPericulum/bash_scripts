@@ -398,6 +398,151 @@ function func_ufw()
   done
 }
 
+func_timezone()
+{
+  timedatectl |grep "Time zone:" | sed 's/^[ t]*//;s/[ t]*$//'
+  echo
+  vtz="Set Vladivostok timezone"
+  echo -e "\033[4mTimezone menu\033[0m"
+  while true; do
+    selections=("$vtz" "Start tzselect" "Next")
+    choose_from_menu "Please make a choice:" selected_choice "${selections[@]}"
+    echo "Selected choice: $selected_choice"
+    if [[ $selected_choice == $vtz ]]
+    then
+      echo "Setting Asia/Vladivostok timezone..."
+      sudo timedatectl set-timezone Asia/Vladivostok
+      echo -e "\033[32mDone\033[0m"
+      echo
+    elif [[ $selected_choice == "Start tzselect" ]]
+    then
+      echo "Starting tzselect..."
+      tzselect
+      echo -e "\033[32mDone\033[0m"
+      echo
+    else
+      break
+    fi
+  done
+}
+
+func_date()
+{
+  read -p 'Input date (YYYY-MM-DD): ' date_
+  until [[ $date_ =~ ^[0-9]{4}[-][0-9]{2}[-][0-9]{2}+$ ]]
+  do
+    echo "Wrong date format!"
+    echo
+    read -p 'Input date (YYYY-MM-DD): ' date_
+  done
+  echo "New date is: $date_"
+  echo
+  return $date
+}
+
+func_time()
+{
+  read -p 'Input time (hh:mm:ss): ' time_
+  until [[ $time_ =~ ^([0-2][0-9]){1}[:]([0-5][0-9]){1}[:]([0-5][0-9]){1}+$ ]]
+  do
+    echo "Wrong time format!"
+    echo
+    read -p 'Input time (YYYY-MM-DD): ' time_
+  done
+  echo "New time is: $time_"
+  echo
+}
+
+func_datetime()
+{
+  echo -e "\033[4mDate and time\033[0m"
+  timedatectl
+  echo
+  tdctl=$(timedatectl | grep "NTP service: active" | sed 's/^[ t]*//;s/[ t]*$//')
+  if [[ $tdctl == "NTP service: active" ]]
+    then
+    echo -e "NTP is \033[32mon\033[0m"
+    echo
+    while true; do
+      read -p "Deactivate it?(Y/N)" yn
+      case $yn in
+        [Yy]* ) echo "Deactivating..."
+                sudo timedatectl set-ntp false
+                echo -e "\033[32mDone\033[0m"
+                echo
+                while true; do
+                  read -p "Do you want to change date and time?(Y/N)" yn
+                  case $yn in
+                    [Yy]* ) func_date
+                            func_time
+                            sudo timedatectl set-time $date_
+                            sudo timedatectl set-time $time_
+                            echo
+                            break;;
+                    [Nn]* ) break;;
+                        * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
+                  esac
+                done
+                while true; do
+                  read -p "Do you want to change timezone?(Y/N)" yn
+                  case $yn in
+                    [Yy]* ) func_timezone
+                            echo
+                            break;;
+                    [Nn]* ) break;;
+                        * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
+                  esac
+                done
+                echo
+                break;;
+        [Nn]* ) break;;
+            * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
+      esac
+    done
+  else
+    echo -e "NTP is \033[31moff\033[0m"
+    while true; do
+    read -p "Activate it?(Y/N)" yn
+    case $yn in
+      [Yy]* ) echo "Activating..."
+              sudo timedatectl set-ntp true
+              echo -e "\033[32mDone\033[0m"
+              echo
+              break;;
+      [Nn]* ) while true; do
+                echo
+                read -p "Do you want to change date and time?(Y/N)" yn
+                case $yn in
+                  [Yy]* ) func_date
+                          func_time
+                          sudo timedatectl set-time $date_
+                          sudo timedatectl set-time $time_
+                          echo
+                          break;;
+                  [Nn]* ) break;;
+                      * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
+                esac
+              done
+              while true; do
+                read -p "Do you want to change timezone?(Y/N)" yn
+                case $yn in
+                  [Yy]* ) func_timezone
+                          echo
+                          break;;
+                  [Nn]* ) break;;
+                      * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
+                esac
+              done
+              break;;
+          * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
+      esac
+      done
+  fi
+  echo
+  date
+  echo
+}
+
 os_id=$(lsb_release -si)
 
 #----- Ubuntu -----
@@ -483,6 +628,9 @@ then
     done
   fi
   echo
+#---- DateTime ----
+  func_datetime
+
 #----- Debian -----
 elif [[ $os_id == $OS_D ]]
 then
@@ -648,6 +796,8 @@ EOF
       esac
     done
   fi
+  #---- DateTime ----
+  func_datetime
 fi
 
 #----- Almalinux/CentOS -----
@@ -890,10 +1040,13 @@ then
           * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
     esac
   done
+  #---- DateTime ----
+  func_datetime
 else
   echo
 fi
 echo
+
 while true; do
   read -p "Need reboot?(Y/N) " yn
   case $yn in
