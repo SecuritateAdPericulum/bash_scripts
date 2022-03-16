@@ -713,16 +713,17 @@ os_id=$(lsb_release -si)
 if [[ $os_id == $OS_U ]]
 then
   echo
+  clear -x
   echo -e "\033[33mIt's Ubuntu!\033[0m"
   echo
   #----- Start -----
   func_start
   echo
   main_menu_=$(echo -e "\033[4mMain menu\033[0m")
-  $main_menu_
   while true; do
+    clear -x
     selections=("Update upgrade" "Utilities" "Change hostname" "Network settings" "Routes" "Firewall settings" "Date and Time" "Exit")
-    choose_from_menu "Main menu:" selected_choice "${selections[@]}"
+    choose_from_menu "$main_menu_" selected_choice "${selections[@]}"
     echo
     echo "Selected choice: $selected_choice"
     if [[ $selected_choice == 'Update upgrade' ]]
@@ -813,6 +814,7 @@ then
 elif [[ $os_id == $OS_D ]]
 then
   echo
+  clear -x
   echo -e "\033[33mIt's Debian!\033[0m"
   echo
   #----- Start -----
@@ -837,11 +839,11 @@ EOF
   echo -e "\033[32mDone\033[0m"
   echo
   fi
-
-  echo -e "\033[4mMain menu\033[0m"
+  main_menu_=$(echo -e "\033[4mMain menu:\033[0m")
   while true; do
+    clear -x
     selections=("Update upgrade" "Utilities" "Change hostname" "Network settings" "Routes" "Firewall settings" "Date and Time" "Exit")
-    choose_from_menu "Please make a choice:" selected_choice "${selections[@]}"
+    choose_from_menu "$main_menu_" selected_choice "${selections[@]}"
     echo
     echo "Selected choice: $selected_choice"
     if [[ $selected_choice == 'Update upgrade' ]]
@@ -1254,7 +1256,7 @@ then
     fi
   done
 else
-  echo "I dont know thise OS :(("
+  echo
 fi
 echo
 
