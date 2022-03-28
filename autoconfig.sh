@@ -839,11 +839,11 @@ EOF
   echo -e "\033[32mDone\033[0m"
   echo
   fi
-  main_menu_=$(echo -e "\033[4mMain menu:\033[0m")
+  main_menu=$(echo -e "\033[4mMain menu:\033[0m")
   while true; do
     clear -x
     selections=("Update upgrade" "Utilities" "Change hostname" "Network settings" "Routes" "Firewall settings" "Date and Time" "Exit")
-    choose_from_menu "$main_menu_" selected_choice "${selections[@]}"
+    choose_from_menu "$main_menu" selected_choice "${selections[@]}"
     echo
     echo "Selected choice: $selected_choice"
     if [[ $selected_choice == 'Update upgrade' ]]
@@ -864,84 +864,193 @@ EOF
     elif [[ $selected_choice == 'Network settings' ]]
     then
       #----- Network -----
-      echo -e "\033[4mNetwork settings:\033[0m"
-      ip a
-      echo
+      function func_manual_int()
+      {
+        echo "Enter new IP address: "
+        read -i "$find_ip_" -e np_ip;
+        echo
+        echo "Enter new netmask (format: 255.255.255.255)"
+        read -i "$find_mask_" -e np_mask;
+        echo
+        echo "Enter new GW: "
+        read -i "$find_gw_" -e np_gw;
+        echo
+        manual_config_="auto $selected_choice_int
+iface $selected_choice_int inet static
+address $np_ip
+gateway $np_gw
+netmask $np_mask
+
+"
+      }
+      main_conf_buf=""
+      main_menu_=$(echo -e "\033[4mNetwork settings:\033[0m")
       while true; do
-        read -p "Do you need a new network settings?(Y/N): " yn
-        case $yn in
-          [Yy]* ) echo "Enter new IP address: "
-                  read np_ip;
-                  echo
-                  echo "Enter new netmask (255.255.255.0): "
-                  read np_mask;
-                  echo
-                  echo "Enter new GW: "
-                  read np_gw;
-                  echo
-                  echo "Enter new DNS1: "
-                  read np_dns1;
-                  echo
-                  echo "Enter new DNS2: "
-                  read np_dns2;
-                  echo
-                  echo "Enter new search domaine: "
-                  read np_sd;
-                  echo
-                  s_list=$(ifconfig -s | awk '{print $1;}')
-                  eval "arr=($s_list)"
-                  unset arr[0]
-                  echo "Network interfaces:"
-                  PS3="Choose an inerface: "
-                  COLUMNS=0
-                  select inst in "${arr[@]}" Next; do
-                    case $inst in
-                      [${arr[@]}]* ) int_name=$inst
-                                     break;;
-                              Next ) break;;
-                                 * ) echo "$REPLY is not a valid number, please retry";;
-                    esac
-                  done
-                  configfile="/etc/network/interfaces"
-                  cat << EOF > $configfile
+        clear -x
+        selections=("Interface settings" "DNS settings" "Exit")
+        choose_from_menu "$main_menu_" selected_choice_main "${selections[@]}"
+        echo
+        echo "Selected choice: $selected_choice_main"
+          if [[ $selected_choice_main == 'Interface settings' ]]
+          then
+            echo -e "\033[4mInterface settings:\033[0m"
+            ip a
+            echo
+            configfile="/etc/network/interfaces"
+            s_list=$(ip a | grep -oP '(?<=\d:\s)[^lo].+?(?=:)')
+            eval "arr=($s_list)"
+            read -rsn1 -p "Press any key to continue"
+            while true; do
+              clear -x
+              selections=("${arr[@]}" "Save settings" "Back")
+              choose_from_menu "Choose network interfaces:" selected_choice_int "${selections[@]}"
+              echo
+              echo "Selected choice: $selected_choice_int"
+              int_settings_=$(grep -oP "iface ${selected_choice_int} inet static" $configfile)
+              if [[ -z ${int_settings_} ]]
+              then
+                echo "DHCP"
+              else
+                echo "Manual or empty"
+                find_ip_=$(grep -zPo "(iface ${selected_choice_int} inet static)\n(address)\s\K(\d+\.\d+\.\d+\.\d+)" $configfile | tr '\0' '\n')
+                if [[ -z ${find_ip_} ]]
+                then
+                  echo "Empty"
+                else
+                  echo "IP address is: $find_ip_"
+                fi
+                echo
+                find_gw_=$(grep -zPo "(iface ${selected_choice_int} inet static)\n(address)\s(\d+\.\d+\.\d+\.\d+)\n(gateway)\s\K(\d+\.\d+\.\d+\.\d+)" $configfile | tr '\0' '\n')
+                if [[ -z ${find_gw_} ]]
+                then
+                  echo "Empty"
+                else
+                  echo "GW: $find_gw_"
+                fi
+                echo
+                find_mask_=$(grep -zPo "(iface ${selected_choice_int} inet static)\n(address)\s(\d+\.\d+\.\d+\.\d+)\n(gateway)\s(\d+\.\d+\.\d+\.\d+)\n(netmask)\s\K(\d+\.\d+\.\d+\.\d+)" $configfile | tr '\0' '\n')
+                if [[ -z ${find_mask_} ]]
+                then
+                  echo "Empty"
+                else
+                  echo "Netmask: $find_mask_"
+                fi
+              fi
+              if [[ $selected_choice_int == 'Save settings' ]]
+              then
+                echo "In bufer:"
+                echo "$main_conf_buf"
+                if [[ -z ${main_conf_buf} ]]
+                then
+                  echo "There is no changes!"
+                else
+                  while true; do
+                    read -p "Save configuration?(Y/N): " yn
+                    case $yn in
+                    [Yy]* ) echo "Saving..."
+                            cat << EOF > $configfile
 source /etc/network/interfaces.d/*
 
 auto lo
 iface lo inet loopback
 
-auto $int_name
-iface $int_name inet static
-address $np_ip
-gateway $np_gw
-netmask $np_mask
-
+$main_conf_buf
 EOF
+                            echo "Done"
+                            echo
+                            echo "Restarting service..."
+                            systemctl restart networking.service
+                            echo "Done"
+                            break;;
+                    [Nn]* ) break;;
+                        * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
+                    esac
+                  done
+                fi
+              elif [[ $selected_choice_int == 'Back' ]]
+              then
+                break
+              else
+                while true; do
+                  clear -x
+                  echo "Interface: $selected_choice_int"
+                  selections=("Manual settings" "DHCP" "Back")
+                  choose_from_menu "Select the type of connection:" selected_choice_type "${selections[@]}"
                   echo
-                  echo -e "\033[32mNetwork config is saved\033[0m"
-                  echo
-                  dpkg -l | grep resolvconf
-                  if [ $? -eq 0 ]
+                  echo "Selected choice: $selected_choice_type"
+                  if [[ $selected_choice_type == 'Manual settings' ]]
                   then
-                    echo "Resolvconf is installed"
-                    echo 'dns-nameservers $np_dns1 $np_dns2' >> $configfile
-                  else
-                    dns_configfile="/etc/resolv.conf"
-                    cat << EOF > $dns_configfile
+                    while true; do
+                      read -p "Do you want a new manual settings?(Y/N): " yn
+                      case $yn in
+                      [Yy]* ) func_manual_int
+                              main_conf_buf+="$manual_config_"
+                              break;;
+                      [Nn]* ) break;;
+                          * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
+                      esac
+                    done
+                  elif [[ $selected_choice_type == 'DHCP' ]]
+                  then
+                    while true; do
+                      read -p "Do you want change to dhcp?(Y/N): " yn
+                      case $yn in
+                      [Yy]* ) dhcp_conf_="auto $selected_choice_int
+iface $selected_choice_int inet dhcp
+
+"
+                              main_conf_buf+="$dhcp_conf_"
+                              echo "Done"
+                              break;;
+                      [Nn]* ) break;;
+                          * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
+                      esac
+                    done
+                  elif [[ $selected_choice_type == 'Back' ]]
+                  then
+                    break
+                  fi
+                done
+              fi
+            done
+          elif [[ $selected_choice_main == 'DNS settings' ]]
+          then
+            echo "DNS:"
+            while true; do
+              read -p "Add new settings?(Y/N): " yn
+              case $yn in
+              [Yy]* ) echo "Enter new DNS1: "
+                      read np_dns1;
+                      echo
+                      echo "Enter new DNS2: "
+                      read np_dns2;
+                      echo
+                      echo "Enter new search domaine: "
+                      read np_sd;
+                      dpkg -l | grep resolvconf
+                      if [ $? -eq 0 ]
+                      then
+                        echo "Resolvconf is installed"
+                        echo 'dns-nameservers $np_dns1 $np_dns2' >> $configfile
+                      else
+                        dns_configfile="/etc/resolv.conf"
+                        cat << EOF > $dns_configfile
 domain $np_sd
 search $np_sd
 nameserver $np_dns1
 nameserver $np_dns2
 EOF
-                    echo "DNS config is saved"
-                  fi
-                  echo
-                  echo "Always good to Reboot!"
-                  systemctl restart networking.service
-                  echo
-                  break;;
-          [Nn]* ) break;;
-              * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
-        esac
+                      fi
+                      break;;
+              [Nn]* ) break;;
+                  * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
+              esac
+            done
+          else
+            break
+          fi
+        echo
+        echo "Done"
       done
     elif [[ $selected_choice == 'Routes' ]]
     then
