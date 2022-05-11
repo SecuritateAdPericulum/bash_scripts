@@ -29,12 +29,11 @@ function apt_update_upgrade()
       [Yy]* ) echo "--- Start update ---"
               sudo apt update
               sudo apt upgrade -y
-              echo "--- Update complete ---"
-              echo
+              echo "--- Update complete ---"; echo
               break;;
       [Nn]* ) break;;
           * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
-     esac
+    esac
   done
   echo
 }
@@ -50,8 +49,7 @@ function func_hostname()
      [Yy]* ) echo "Enter new hostname: "
             read hname;
             hostnamectl set-hostname $hname;
-            echo -e "\033[32mDone\033[0m";
-            echo
+            echo -e "\033[32mDone\033[0m"; echo;
             break;;
     [Nn]* ) break;;
     * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
@@ -64,24 +62,12 @@ function func_ubuntu_netplan()
   while true; do
     read -p "Do you need a new network settings?(Y/N): " yn
     case $yn in
-      [Yy]* ) echo "Enter new IP address: "
-              read np_ip;
-              echo
-              echo "Enter new netmask (24): "
-              read np_mask;
-              echo
-              echo "Enter new GW: "
-              read np_gw;
-              echo
-              echo "Enter new DNS1: "
-              read np_dns1;
-              echo
-              echo "Enter new DNS2: "
-              read np_dns2;
-              echo
-              echo "Enter new search domaine: "
-              read np_sd;
-              echo
+      [Yy]* ) echo "Enter new IP address: "; read np_ip; echo;
+              echo "Enter new netmask (24): "; read np_mask; echo;
+              echo "Enter new GW: "; read np_gw; echo;
+              echo "Enter new DNS1: "; read np_dns1; echo;
+              echo "Enter new DNS2: "; read np_dns2; echo;
+              echo "Enter new search domaine: "; read np_sd; echo;
               s_list=$(ifconfig -s | awk '{print $1;}')
               eval "arr=($s_list)"
               unset arr[0]
@@ -112,8 +98,7 @@ network:
         - $np_sd
   version: 2
 EOF
-            echo -e "\033[32mConfig is saved\033[0m"
-            echo
+            echo -e "\033[32mConfig is saved\033[0m"; echo;
             if sudo netplan --debug generate | grep 'Configuration is valid'
             then
               echo "Config is Ok, appling it..."
@@ -123,9 +108,7 @@ EOF
               echo -e "\033[31mConfig is not Ok, check it!\033[0m"
               sudo netplan --debug generate
             fi
-            echo
-            echo "Network settings:"
-            cat $configfile
+            echo; echo "Network settings:"; cat $configfile;
             break;;
     [Nn]* ) break;;
         * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
@@ -138,40 +121,28 @@ function func_ubuntu_classic_int
   while true; do
     read -p "Do you need a new network settings?(Y/N): " yn
     case $yn in
-      [Yy]* ) echo "Enter new IP address: "
-            read int_ip;
-            echo
-            echo "Enter new netmask (255.255.255.0): "
-            read int_mask;
-            echo
-            echo "Enter new GW: "
-            read int_gw;
-            echo
-            echo "Enter new DNS1: "
-            read int_dns1;
-            echo
-            echo "Enter new DNS2: "
-            read int_dns2;
-            echo
-            echo "Enter new search domaine: "
-            read int_sd;
-            echo
-            s_list=$(ifconfig -s | awk '{print $1;}')
-            eval "arr=($s_list)"
-            unset arr[0]
-            echo "Network interfaces:"
-            PS3="Choose an inerface: "
-            COLUMNS=0
-            select inst in "${arr[@]}" Next; do
-              case $inst in
-                [${arr[@]}]* ) int_name=$inst
-                               break;;
-                Next) break;;
-                *) echo "$REPLY is not a valid number, please retry";;
-              esac
-            done
-            configfile="/etc/network/interfaces"
-            cat << EOF > $configfile
+      [Yy]* ) echo "Enter new IP address: "; read int_ip; echo;
+              echo "Enter new netmask (255.255.255.0): "; read int_mask; echo;
+              echo "Enter new GW: "; read int_gw; echo;
+              echo "Enter new DNS1: "; read int_dns1; echo;
+              echo "Enter new DNS2: "; read int_dns2; echo;
+              echo "Enter new search domaine: "; read int_sd; echo;
+              s_list=$(ifconfig -s | awk '{print $1;}')
+              eval "arr=($s_list)"
+              unset arr[0]
+              echo "Network interfaces:"
+              PS3="Choose an inerface: "
+              COLUMNS=0
+              select inst in "${arr[@]}" Next; do
+                case $inst in
+                  [${arr[@]}]* ) int_name=$inst
+                                 break;;
+                           Next) break;;
+                              *) echo "$REPLY is not a valid number, please retry";;
+                esac
+              done
+              configfile="/etc/network/interfaces"
+              cat << EOF > $configfile
 source /etc/network/interfaces.d/*
 
 auto lo
@@ -184,10 +155,7 @@ gateway $int_gw
 netmask $int_mask
 
 EOF
-            echo
-            echo "Network config is saved"
-            echo
-
+            echo; echo "Network config is saved"; echo
             dpkg -l | grep resolvconf
             if [ $? -eq 0 ]
             then
@@ -203,10 +171,8 @@ nameserver $int_dns2
 EOF
               echo "DNS config is saved"
             fi
-            echo
-            echo "Always good to Reboot!"
-            sudo service network-manager restart
-            echo
+            echo; echo "Always good to Reboot!"
+            sudo service network-manager restart; echo
             break;;
     [Nn]* ) break;;
         * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
@@ -221,22 +187,19 @@ function func_route()
     selections=("Routes list" "Add route" "Add default route" "Delete route" "Back")
     clear -x
     choose_from_menu "$r_menu_" selected_choice "${selections[@]}"
-    echo
-    echo "Selected choice: $selected_choice"
+    echo; echo "Selected choice: $selected_choice"
     if [[ $selected_choice == 'Routes list' ]]
     then
       echo "Route list:"
       ip route list
+	  read -rsn1 -p "Press any key to continue"
     elif [[ $selected_choice == 'Add route' ]]
     then
-      echo "IP address or network:"
-      read ip_add_
-      echo "Mask:"
-      read mask_
-      echo "Gateway IP:"
-      read ip_gat_
+      echo "IP address or network:"; read ip_add_;
+	  echo "Mask:"; read mask_;
+      echo "Gateway IP:"; read ip_gat_;
       echo "Interface:"
-      s_list=$(ifconfig -s | awk '{print $1;}')
+	  s_list=$(ifconfig -s | awk '{print $1;}')
       eval "arr=($s_list)"
       unset arr[0]
       echo "Network interfaces:"
@@ -253,17 +216,14 @@ function func_route()
       then
         sudo ip route add $ip_add_$mask_ dev $int_name_
       else
-      sudo ip route add $ip_add_$mask_ via $ip_gat_ dev $int_name_
+        sudo ip route add $ip_add_$mask_ via $ip_gat_ dev $int_name_
       fi
       echo "Done"
     elif [[ $selected_choice == 'Add default route' ]]
-      then
-      echo "IP address or network:"
-      read ip_add_
-      echo "Mask:"
-      read mask_
-      echo "Gateway IP:"
-      read ip_gat_
+    then
+      echo "IP address or network:"; read ip_add_;
+      echo "Mask:"; read mask_;
+      echo "Gateway IP:"; read ip_gat_;
       echo "Interface:"
       s_list=$(ifconfig -s | awk '{print $1;}')
       eval "arr=($s_list)"
@@ -292,16 +252,13 @@ function func_route()
         clear -x
         selections=("Routes list" "Delete route" "Delete default route" "Back")
         choose_from_menu "$r_d_menu_" selected_delete_choice "${selections[@]}"
-        echo
-        echo "Selected choice: $selected_delete_choice"
+        echo; echo "Selected choice: $selected_delete_choice";
         if [[ $selected_delete_choice == 'Routes list' ]]
         then
           ip route list
         elif [[ $selected_delete_choice == 'Delete route' ]]
         then
-          echo "IP address:"
-          read ip_add_
-          echo
+          echo "IP address:"; read ip_add_; echo;
           echo "Interface:"
           s_list=$(ifconfig -s | awk '{print $1;}')
           eval "arr=($s_list)"
@@ -361,8 +318,7 @@ function func_route()
 
 function func_utilities()
 {
-  echo -e "\033[4mInstalling utilities\033[0m"
-  echo
+  echo -e "\033[4mInstalling utilities\033[0m"; echo;
   check_=(sudo ufw bc openssh-server)
   for i in ${check_[@]}
   do
@@ -374,10 +330,7 @@ function func_utilities()
       echo "$i is allready installed"
     fi
   done
-  echo
-  echo "Utilities list:"
-  echo "mc nethogs htop net-tools"
-  echo
+  echo; echo "Utilities list:"; echo "mc nethogs htop net-tools"; echo;
   while true; do
     read -p "Do you want to install these utilities?(Y/N) " yn
     case $yn in
@@ -400,9 +353,7 @@ function isinstalled()
 function func_utilities_AC()
 {
   soft_=(mc epel-release htop net-tools)
-  echo
-  echo -e "\033[4mUtilities\033[0m"
-  echo
+  echo; echo -e "\033[4mUtilities\033[0m"; echo;
   while true; do
     read -p "Install base utilities?(Y/N) " yn
     case $yn in
@@ -424,20 +375,17 @@ function func_utilities_AC()
                     else
                       echo "$i not installed"
                       sudo yum install $i -y;
-                      echo -e "\033[32mDone\033[0m"
-                      echo
+                      echo -e "\033[32mDone\033[0m"; echo;
                     fi
                   done
                 else
                   if isinstalled $selected_choice
                   then
-                    echo "$selected_choice installed"
-                    echo
-                    else
+                    echo "$selected_choice installed"; echo;
+                  else
                     echo "$selected_choice not installed"
                     sudo yum install $selected_choice -y;
-                    echo -e "\033[32mDone\033[0m"
-                    echo
+                    echo -e "\033[32mDone\033[0m"; echo;
                   fi
                 fi
               echo
@@ -497,8 +445,7 @@ function func_ufw()
     case $yn in
       [Yy]* ) #----- Service -----
               while true; do
-                echo
-                echo -e "\033[4mAdding services\033[0m"
+                echo; echo -e "\033[4mAdding services\033[0m";
                 selections=("${arr_new_list[@]}" "Next")
                 choose_from_menu "Please make a choice:" selected_choice "${selections[@]}"
                 echo "Selected choice: $selected_choice"
@@ -513,43 +460,34 @@ function func_ufw()
                     sleep 1
                     : $((secs--))
                   done
-                  echo -e "\033[32mDone\033[0m"
-                  echo
-                  sudo ufw status verbose
-                  echo
+                  echo -e "\033[32mDone\033[0m"; echo;
+                  sudo ufw status verbose; echo;
                 fi
               done
               echo
               #----- Port -----
               arr_prot=(TCP UDP)
               while true; do
-                echo
-                echo -e "\033[4mAdding ports\033[0m"
+                echo; echo -e "\033[4mAdding ports\033[0m";
                 selections=("${arr_prot[@]}" "Quit")
                 choose_from_menu "Please make a choice:" selected_choice "${selections[@]}"
                 echo "Selected choice: $selected_choice"
                 if [ $selected_choice == "TCP" ]
                 then
                   prot="/tcp"
-                  echo
-                  echo "Enter port number, or port range (1:999): "
+                  echo; echo "Enter port number, or port range (1:999): ";
                   read p_num
-                  sudo ufw allow $p_num$prot
-                  echo
+                  sudo ufw allow $p_num$prot; echo;
                   sudo ufw status verbose
-                  echo -e "\033[32mDone\033[0m"
-                  echo
+                  echo -e "\033[32mDone\033[0m"; echo;
                 elif [ $selected_choice == "UDP" ]
                 then
                   prot="/udp"
-                  echo
-                  echo "Enter port number, or port range (1:999): "
+                  echo; echo "Enter port number, or port range (1:999): ";
                   read p_num
-                  sudo ufw allow $p_num$prot
-                  echo
+                  sudo ufw allow $p_num$prot; echo;
                   sudo ufw status verbose
-                  echo -e "\033[32mDone\033[0m"
-                  echo
+                  echo -e "\033[32mDone\033[0m"; echo;
                 elif [ $selected_choice == "Quit" ]
                 then
                   break
@@ -564,8 +502,7 @@ function func_ufw()
 
 func_timezone()
 {
-  timedatectl |grep "Time zone:" | sed 's/^[ t]*//;s/[ t]*$//'
-  echo
+  timedatectl |grep "Time zone:" | sed 's/^[ t]*//;s/[ t]*$//'; echo
   vtz="Set Vladivostok timezone"
   echo -e "\033[4mTimezone menu\033[0m"
   while true; do
@@ -576,14 +513,12 @@ func_timezone()
     then
       echo "Setting Asia/Vladivostok timezone..."
       sudo timedatectl set-timezone Asia/Vladivostok
-      echo -e "\033[32mDone\033[0m"
-      echo
+      echo -e "\033[32mDone\033[0m"; echo;
     elif [[ $selected_choice == "Start tzselect" ]]
     then
       echo "Starting tzselect..."
       tzselect
-      echo -e "\033[32mDone\033[0m"
-      echo
+      echo -e "\033[32mDone\033[0m"; echo;
     else
       break
     fi
@@ -595,12 +530,10 @@ func_date()
   read -p 'Input date (YYYY-MM-DD): ' date_
   until [[ $date_ =~ ^[0-9]{4}[-][0-9]{2}[-][0-9]{2}+$ ]]
   do
-    echo "Wrong date format!"
-    echo
+    echo "Wrong date format!"; echo;
     read -p 'Input date (YYYY-MM-DD): ' date_
   done
-  echo "New date is: $date_"
-  echo
+  echo "New date is: $date_"; echo;
   return $date
 }
 
@@ -609,12 +542,10 @@ func_time()
   read -p 'Input time (hh:mm:ss): ' time_
   until [[ $time_ =~ ^([0-2][0-9]){1}[:]([0-5][0-9]){1}[:]([0-5][0-9]){1}+$ ]]
   do
-    echo "Wrong time format!"
-    echo
+    echo "Wrong time format!"; echo;
     read -p 'Input time (YYYY-MM-DD): ' time_
   done
-  echo "New time is: $time_"
-  echo
+  echo "New time is: $time_"; echo;
 }
 
 func_datetime()
@@ -625,23 +556,20 @@ func_datetime()
   tdctl=$(timedatectl | grep "NTP service: active" | sed 's/^[ t]*//;s/[ t]*$//')
   if [[ $tdctl == "NTP service: active" ]]
     then
-    echo -e "NTP is \033[32mon\033[0m"
-    echo
+    echo -e "NTP is \033[32mon\033[0m"; echo;
     while true; do
       read -p "Deactivate it?(Y/N)" yn
       case $yn in
         [Yy]* ) echo "Deactivating..."
                 sudo timedatectl set-ntp false
-                echo -e "\033[32mDone\033[0m"
-                echo
+                echo -e "\033[32mDone\033[0m"; echo;
                 while true; do
                   read -p "Do you want to change date and time?(Y/N)" yn
                   case $yn in
                     [Yy]* ) func_date
                             func_time
                             sudo timedatectl set-time $date_
-                            sudo timedatectl set-time $time_
-                            echo
+                            sudo timedatectl set-time $time_; echo;
                             break;;
                     [Nn]* ) break;;
                         * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
@@ -650,8 +578,7 @@ func_datetime()
                 while true; do
                   read -p "Do you want to change timezone?(Y/N)" yn
                   case $yn in
-                    [Yy]* ) func_timezone
-                            echo
+                    [Yy]* ) func_timezone; echo;
                             break;;
                     [Nn]* ) break;;
                         * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
@@ -670,18 +597,15 @@ func_datetime()
     case $yn in
       [Yy]* ) echo "Activating..."
               sudo timedatectl set-ntp true
-              echo -e "\033[32mDone\033[0m"
-              echo
+              echo -e "\033[32mDone\033[0m"; echo;
               break;;
       [Nn]* ) while true; do
-                echo
-                read -p "Do you want to change date and time?(Y/N)" yn
+                echo; read -p "Do you want to change date and time?(Y/N)" yn;
                 case $yn in
                   [Yy]* ) func_date
                           func_time
                           sudo timedatectl set-time $date_
-                          sudo timedatectl set-time $time_
-                          echo
+                          sudo timedatectl set-time $time_; echo
                           break;;
                   [Nn]* ) break;;
                       * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
@@ -690,8 +614,7 @@ func_datetime()
               while true; do
                 read -p "Do you want to change timezone?(Y/N)" yn
                 case $yn in
-                  [Yy]* ) func_timezone
-                          echo
+                  [Yy]* ) func_timezone; echo;
                           break;;
                   [Nn]* ) break;;
                       * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
@@ -714,33 +637,27 @@ if [[ $os_id == $OS_U ]]
 then
   echo
   clear -x
-  echo -e "\033[33mIt's Ubuntu!\033[0m"
-  echo
+  echo -e "\033[33mIt's Ubuntu!\033[0m"; echo;
   #----- Start -----
-  func_start
-  echo
+  func_start; echo;
   main_menu_=$(echo -e "\033[4mMain menu\033[0m")
   while true; do
     clear -x
     selections=("Update upgrade" "Utilities" "Change hostname" "Network settings" "Routes" "Firewall settings" "Date and Time" "Exit")
-    choose_from_menu "$main_menu_" selected_choice "${selections[@]}"
-    echo
+    choose_from_menu "$main_menu_" selected_choice "${selections[@]}"; echo;
     echo "Selected choice: $selected_choice"
     if [[ $selected_choice == 'Update upgrade' ]]
     then
       #----- Update -----
-      apt_update_upgrade
-      echo
+      apt_update_upgrade; echo;
     elif [[ $selected_choice == 'Utilities' ]]
     then
       #----- Utilities -----
-      func_utilities
-      echo
+      func_utilities; echo;
     elif [[ $selected_choice == 'Change hostname' ]]
     then
       #----- Hostname -----
-      func_hostname
-      echo
+      func_hostname; echo;
     elif [[ $selected_choice == 'Network settings' ]]
     then
       #----- Network -----
@@ -751,14 +668,11 @@ then
       result=$(echo "$rel_num >= 18.04" | bc -l)
       if [ $result -eq 1 ]
         then
-        echo "Netplan configuration"
-        echo
-        func_ubuntu_netplan
-        echo
+        echo "Netplan configuration"; echo;
+        func_ubuntu_netplan; echo;
       else
-        echo "Network configuration"
-        echo
-        func_ubuntu_classic_int
+        echo "Network configuration"; echo;
+        func_ubuntu_classic_int; echo;
       fi
     elif [[ $selected_choice == 'Routes' ]]
     then
@@ -771,14 +685,12 @@ then
       ufw_status=$(sudo ufw status verbose | grep "Status: inactive")
       if [ $? -eq 0 ]
       then
-        echo
-        echo -e "UFW is\033[32m disable \033[0m"
+        echo; echo -e "UFW is\033[32m disable \033[0m";
         while true; do
           read -p "Do you whant to enable UFW?(Y/N) " yn
           case $yn in
             [Yy]* ) sudo ufw enable
-                    echo -e "\033[32mDone\033[0m"
-                    echo
+                    echo -e "\033[32mDone\033[0m"; echo;
                     func_ufw
                     break;;
             [Nn]* ) break;;
@@ -786,8 +698,7 @@ then
           esac
         done
       else
-        echo
-        echo -e "UFW is\033[32m enable \033[0m"
+        echo; echo -e "UFW is\033[32m enable \033[0m";
         while true; do
           read -p "Do you whant to disable UFW?(Y/N) " yn
           case $yn in
@@ -813,13 +724,10 @@ then
 #----- Debian ----------------------------------------
 elif [[ $os_id == $OS_D ]]
 then
-  echo
-  clear -x
-  echo -e "\033[33mIt's Debian!\033[0m"
-  echo
+  echo; clear -x;
+  echo -e "\033[33mIt's Debian!\033[0m"; echo;
   #----- Start -----
-  func_start
-  echo
+  func_start; echo;
   #----- Check repo -----
   line=$(head -n 1 /etc/apt/sources.list)
   c_line="deb http://deb.debian.org/debian/ bullseye main"
@@ -836,45 +744,34 @@ deb-src http://security.debian.org/debian-security bullseye-security main contri
 deb http://deb.debian.org/debian/ bullseye-updates main contrib
 deb-src http://deb.debian.org/debian/ bullseye-updates main contrib
 EOF
-  echo -e "\033[32mDone\033[0m"
-  echo
+  echo -e "\033[32mDone\033[0m"; echo;
   fi
   main_menu=$(echo -e "\033[4mMain menu:\033[0m")
   while true; do
     clear -x
     selections=("Update upgrade" "Utilities" "Change hostname" "Network settings" "Routes" "Firewall settings" "Date and Time" "Exit")
-    choose_from_menu "$main_menu" selected_choice "${selections[@]}"
-    echo
+    choose_from_menu "$main_menu" selected_choice "${selections[@]}"; echo;
     echo "Selected choice: $selected_choice"
     if [[ $selected_choice == 'Update upgrade' ]]
     then
       #----- Update -----
-      apt_update_upgrade
-      echo
+      apt_update_upgrade; echo;
     elif [[ $selected_choice == 'Utilities' ]]
     then
       #----- Utilities -----
-      func_utilities
-      echo
+      func_utilities; echo;
     elif [[ $selected_choice == 'Change hostname' ]]
     then
       #----- Hostname -----
-      func_hostname
-      echo
+      func_hostname; echo;
     elif [[ $selected_choice == 'Network settings' ]]
     then
       #----- Network -----
       function func_manual_int()
       {
-        echo "Enter new IP address: "
-        read -i "$find_ip_" -e np_ip;
-        echo
-        echo "Enter new netmask (format: 255.255.255.255)"
-        read -i "$find_mask_" -e np_mask;
-        echo
-        echo "Enter new GW: "
-        read -i "$find_gw_" -e np_gw;
-        echo
+        echo "Enter new IP address: "; read -i "$find_ip_" -e np_ip; echo;
+        echo "Enter new netmask (format: 255.255.255.255)"; read -i "$find_mask_" -e np_mask; echo;
+        echo "Enter new GW: "; read -i "$find_gw_" -e np_gw; echo;
         manual_config_="auto $selected_choice_int
 iface $selected_choice_int inet static
 address $np_ip
@@ -888,14 +785,12 @@ netmask $np_mask
       while true; do
         clear -x
         selections=("Interface settings" "DNS settings" "Exit")
-        choose_from_menu "$main_menu_" selected_choice_main "${selections[@]}"
-        echo
+        choose_from_menu "$main_menu_" selected_choice_main "${selections[@]}"; echo;
         echo "Selected choice: $selected_choice_main"
           if [[ $selected_choice_main == 'Interface settings' ]]
           then
             echo -e "\033[4mInterface settings:\033[0m"
-            ip a
-            echo
+            ip a; echo;
             configfile="/etc/network/interfaces"
             s_list=$(ip a | grep -oP '(?<=\d:\s)[^lo].+?(?=:)')
             eval "arr=($s_list)"
@@ -903,8 +798,7 @@ netmask $np_mask
             while true; do
               clear -x
               selections=("${arr[@]}" "Save settings" "Back")
-              choose_from_menu "Choose network interfaces:" selected_choice_int "${selections[@]}"
-              echo
+              choose_from_menu "Choose network interfaces:" selected_choice_int "${selections[@]}"; echo;
               echo "Selected choice: $selected_choice_int"
               int_settings_=$(grep -oP "iface ${selected_choice_int} inet static" $configfile)
               if [[ -z ${int_settings_} ]]
@@ -928,7 +822,7 @@ netmask $np_mask
                   echo "GW: $find_gw_"
                 fi
                 echo
-                find_mask_=$(grep -zPo "(iface ${selected_choice_int} inet static)\n(address)\s(\d+\.\d+\.\d+\.\d+)\n(gateway)\s(\d+\.\d+\.\d+\.\d+)\n(netmask)\s\K(\d+\.\d+\.\d+\.\d+)" $configfile | tr '\0' '\n')
+				find_mask_=$(grep -zPo "(iface ${selected_choice_int} inet static)\n(address)\s(\d+\.\d+\.\d+\.\d+)\n(gateway)\s(\d+\.\d+\.\d+\.\d+)\n(netmask)\s\K(\d+\.\d+\.\d+\.\d+)" $configfile | tr '\0' '\n')
                 if [[ -z ${find_mask_} ]]
                 then
                   echo "Empty"
@@ -956,8 +850,7 @@ iface lo inet loopback
 
 $main_conf_buf
 EOF
-                            echo "Done"
-                            echo
+                            echo "Done"; echo;
                             echo "Restarting service..."
                             systemctl restart networking.service
                             echo "Done"
@@ -975,8 +868,7 @@ EOF
                   clear -x
                   echo "Interface: $selected_choice_int"
                   selections=("Manual settings" "DHCP" "Back")
-                  choose_from_menu "Select the type of connection:" selected_choice_type "${selections[@]}"
-                  echo
+                  choose_from_menu "Select the type of connection:" selected_choice_type "${selections[@]}"; echo;
                   echo "Selected choice: $selected_choice_type"
                   if [[ $selected_choice_type == 'Manual settings' ]]
                   then
@@ -1020,13 +912,9 @@ iface $selected_choice_int inet dhcp
               read -p "Add new settings?(Y/N): " yn
               case $yn in
               [Yy]* ) echo "Enter new DNS1: "
-                      read np_dns1;
-                      echo
-                      echo "Enter new DNS2: "
-                      read np_dns2;
-                      echo
-                      echo "Enter new search domaine: "
-                      read np_sd;
+                      read np_dns1; echo;
+                      echo "Enter new DNS2: "; read np_dns2; echo;
+                      echo "Enter new search domaine: "; read np_sd;
                       dpkg -l | grep resolvconf
                       if [ $? -eq 0 ]
                       then
@@ -1055,8 +943,7 @@ EOF
     elif [[ $selected_choice == 'Routes' ]]
     then
       #----- Routes -----
-      func_route
-      echo
+      func_route; echo;
     elif [[ $selected_choice == 'Firewall settings' ]]
     then
       #----- UFW -----
@@ -1064,14 +951,12 @@ EOF
       ufw_status=$(sudo ufw status verbose | grep "Status: inactive")
       if [ $? -eq 0 ]
       then
-        echo
-        echo -e "UFW is\033[32m disable \033[0m"
+        echo; echo -e "UFW is\033[32m disable \033[0m"
         while true; do
           read -p "Do you whant to enable UFW?(Y/N) " yn
           case $yn in
             [Yy]* ) sudo ufw enable
-                    echo -e "\033[32mDone\033[0m"
-                    echo
+                    echo -e "\033[32mDone\033[0m"; echo;
                     func_ufw
                     break;;
             [Nn]* ) break;;
@@ -1079,8 +964,7 @@ EOF
           esac
         done
       else
-        echo
-        echo -e "UFW is\033[32m enable \033[0m"
+        echo; echo -e "UFW is\033[32m enable \033[0m";
         while true; do
           read -p "Do you whant to disable UFW?(Y/N) " yn
           case $yn in
@@ -1120,13 +1004,11 @@ then
 
   if isinstalled $version
     then
-    echo "lsb_release installed"
-    echo
+    echo "lsb_release installed"; echo;
     else
     echo "lsb_release not installed"
     yum install redhat-lsb-core -y
-    echo -e "\033[32mDone\033[0m"
-    echo
+    echo -e "\033[32mDone\033[0m"; echo;
   fi
   clear -x
   os_id=$(lsb_release -si)
@@ -1146,8 +1028,7 @@ then
   while true; do
     clear -x
     selections=("Update upgrade" "Utilities" "Change hostname" "Network settings" "Routes" "Firewall settings" "Date and Time" "Exit")
-    choose_from_menu "$main_menu_" selected_choice "${selections[@]}"
-    echo
+    choose_from_menu "$main_menu_" selected_choice "${selections[@]}"; echo;
     echo "Selected choice: $selected_choice"
     if [[ $selected_choice == 'Update upgrade' ]]
     then
@@ -1161,26 +1042,22 @@ then
       then
       echo "--- Start update ---"
       sudo yum update -y
-      echo "--- Update complete ---"
-      echo
+      echo "--- Update complete ---"; echo;
     elif [ $selected_choice == "upgrade" ]
     then
       echo "--- Start upgrade ---"
       sudo yum upgrade -y
-      echo "--- Upgrade complete ---"
-      echo
+      echo "--- Upgrade complete ---"; echo;
     fi
     echo
     elif [[ $selected_choice == 'Utilities' ]]
     then
       #----- Utilities -----
-      func_utilities_AC
-      echo
+      func_utilities_AC; echo;
     elif [[ $selected_choice == 'Change hostname' ]]
     then
       #----- Hostname -----
-      func_hostname
-      echo
+      func_hostname; echo;
     elif [[ $selected_choice == 'Network settings' ]]
     then
       #----- Network -----
@@ -1190,21 +1067,11 @@ then
       while true; do
         read -p "Do you need a new network settings?(Y/N): " yn
         case $yn in
-          [Yy]* ) echo "Enter new IP address: "
-                  read int_ip;
-                  echo
-                  echo "Enter new netmask (24): "
-                  read int_mask;
-                  echo
-                  echo "Enter new GW: "
-                  read int_gw;
-                  echo
-                  echo "Enter new DNS1: "
-                  read int_dns1;
-                  echo
-                  echo "Enter new DNS2: "
-                  read int_dns2;
-                  echo
+          [Yy]* ) echo "Enter new IP address: "; read int_ip; echo;
+                  echo "Enter new netmask (24): "; read int_mask; echo;
+                  echo "Enter new GW: "; read int_gw; echo;
+                  echo "Enter new DNS1: "; read int_dns1; echo;
+                  echo "Enter new DNS2: "; read int_dns2; echo;
                   s_list=$(ifconfig -s | awk '{print $1;}')
                   eval "arr=($s_list)"
                   unset arr[0]
@@ -1222,8 +1089,7 @@ then
                   sudo nmcli connection modify $int_name IPv4.gateway $int_gw
                   sudo nmcli connection modify $int_name IPv4.dns "$int_dns1 $int_dns2"
                   sudo nmcli connection modify $int_name IPv4.method manual
-                  sudo nmcli connection down $int_name && nmcli connection up $int_name
-                  echo
+                  sudo nmcli connection down $int_name && nmcli connection up $int_name; echo;
                   echo "New network settings:"
                   ip a
                   break;;
@@ -1234,19 +1100,16 @@ then
     elif [[ $selected_choice == 'Routes' ]]
     then
       #----- Routes -----
-      func_route
-      echo
+      func_route; echo;
     elif [[ $selected_choice == 'Firewall settings' ]]
     then
       arr_new_list=(cockpit dhcp dhcpv6-client dns docker-registry docker-swarm git grafana http https imap imaps iscsi-target jenkins kibana ldap ldaps mongodb mssql mysql pop3 pop3s postgresql samba samba-client ssh smtp smtps syslog telnet tftp tftp-client zabbix-agent)
       s_list=$(sudo firewall-cmd --list-services)
       eval "arr_list=($s_list)"
       eq_list=$(echo ${arr_list[@]} ${arr_new_list[@]} | tr ' ' '\n' | sort | uniq -u)
-      eval "arr_eq_list=($eq_list)"
-      echo
+      eval "arr_eq_list=($eq_list)"; echo;
       echo -e "\033[4mFirewall settings:\033[0m"
-      sudo firewall-cmd --list-all
-      echo
+      sudo firewall-cmd --list-all; echo;
       while true; do
         read -p "Do you need a new firewall settings?(Y/N) " yn
         case $yn in
@@ -1272,11 +1135,9 @@ then
                         s_list=$(sudo firewall-cmd --list-services)
                         eval "arr_list=($s_list)"
                         eq_list=$(echo ${arr_list[@]} ${arr_new_list[@]} | tr ' ' '\n' | sort | uniq -u)
-                        eval "arr_eq_list=($eq_list)"
-                        echo
+                        eval "arr_eq_list=($eq_list)"; echo;
                         echo "Services:"
-                        echo "${arr_list[@]}"
-                        echo
+                        echo "${arr_list[@]}"; echo;
                       fi
                     done
                     echo
@@ -1289,25 +1150,19 @@ then
                       echo "Selected choice: $selected_choice"
                       if [ $selected_choice == "TCP" ]
                       then
-                        prot="/tcp"
-                        echo
-                        echo "Enter port number, or port range (1-999): "
-                        read p_num
+                        prot="/tcp"; echo
+                        echo "Enter port number, or port range (1-999): "; read p_num;
                         sudo firewall-cmd --zone=public --add-port=$p_num$prot
-                        sudo firewall-cmd --zone=public --permanent --add-port=$p_num$prot
-                        echo
+                        sudo firewall-cmd --zone=public --permanent --add-port=$p_num$prot; echo
                         echo "Open ports:"
                         sudo firewall-cmd --zone=public --permanent --list-ports
                         echo "Done"
                       elif [ $selected_choice == "UDP" ]
                       then
-                        prot="/udp"
-                        echo
-                        echo "Enter port number, or port range (1-999): "
-                        read p_num
+                        prot="/udp"; echo;
+                        echo "Enter port number, or port range (1-999): "; read p_num
                         sudo firewall-cmd --zone=public --add-port=$p_num$prot
-                        sudo firewall-cmd --zone=public --permanent --add-port=$p_num$prot
-                        echo
+                        sudo firewall-cmd --zone=public --permanent --add-port=$p_num$prot; echo
                         echo "Open ports:"
                         sudo firewall-cmd --zone=public --permanent --list-ports
                         echo -e "\033[32mDone\033[0m"
@@ -1317,10 +1172,8 @@ then
                       fi
                     done
                     #----- SELinux -----
-                    echo
-                    sestatus | grep "SELinux status"
-                    se_status=$(getenforce)
-                    echo
+                    echo; sestatus | grep "SELinux status";
+                    se_status=$(getenforce); echo;
                     if [ "$se_status" == "Enforcing" ]
                     then
                       while true; do
@@ -1340,8 +1193,7 @@ then
                       while true; do
                         read -p "Disable the SELinux?(Y/N) " yn
                         case $yn in
-                          [Yy]* ) sudo sed -i s/SELINUX=enforcing/SELINUX=disabled/ /etc/selinux/config
-                                  echo
+                          [Yy]* ) sudo sed -i s/SELINUX=enforcing/SELINUX=disabled/ /etc/selinux/config; echo;
                                   echo "Done, need to reboot!"
                                   break;;
                           [Nn]* ) break;;
@@ -1372,8 +1224,7 @@ echo
 while true; do
   read -p "Need reboot?(Y/N) " yn
   case $yn in
-    [Yy]* ) echo -e "\033[32mRebooting system...\033[0m"
-            echo
+    [Yy]* ) echo -e "\033[32mRebooting system...\033[0m"; echo;
             secs=$((3))
             while [ $secs -gt 0 ]; do
               sleep 1
@@ -1386,8 +1237,6 @@ while true; do
   esac
 done
 
-echo
-echo "That's all folks!"
-echo
+echo; echo "That's all folks!"; echo
 #---
 exit 0
