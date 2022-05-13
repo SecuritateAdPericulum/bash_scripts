@@ -630,6 +630,92 @@ func_datetime()
   echo
 }
 
+func_storage_devices()
+{
+  while true; do
+    clear -x
+    selections=("USB Flash drive" "Back")
+    choose_from_menu "Main menu:" selected_delete_choice "${selections[@]}"
+    echo; echo "Selected choice: $selected_delete_choice";
+    if [[ $selected_delete_choice == 'USB Flash drive' ]]
+    then
+      while true; do
+        clear -x
+        selections=("Mount flash drive" "Unmount flash drive" "Back")
+        choose_from_menu "Main menu:" selected_delete_choice "${selections[@]}"
+        echo; echo "Selected choice: $selected_delete_choice";
+        if [[ $selected_delete_choice == 'Mount flash drive' ]]
+        then
+          echo "Searching for USB drives..."
+          for devlink in /dev/disk/by-id/usb*
+          do
+            readlink -f ${devlink}
+          done
+
+          if [[ $devlink == "/dev/disk/by-id/usb*" ]]
+          then
+            echo "USB flash drive not detected"
+            echo; read -rsn1 -p "Press any key to continue";
+          else
+            usbfd_=$(readlink -f ${devlink})
+            while true; do
+              read -p "Mount flash drive?(Y/N) " yn
+              case $yn in
+                [Yy]* ) if ! [ -d /mnt/usb ]; then
+                          sudo mkdir /mnt/usb
+                        fi
+                        sudo mount $usbfd_ /mnt/usb
+                        echo "Done"; echo
+                        echo "$usbfd_ contents:"
+                        ls -l /mnt/usb
+                        echo; read -rsn1 -p "Press any key to continue";
+                        break;;
+                [Nn]* ) break;;
+                    * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
+              esac
+            done
+          fi
+
+        elif [[ $selected_delete_choice == 'Unmount flash drive' ]]
+        then
+          echo "Searching for USB drives..."
+          for devlink in /dev/disk/by-id/usb*
+          do
+            readlink -f ${devlink}
+          done
+
+          if [[ $devlink == "/dev/disk/by-id/usb*" ]]
+          then
+            echo "USB flash drive not detected"
+            echo; read -rsn1 -p "Press any key to continue";
+          else
+            while true; do
+              read -p "Unmount flash drive?(Y/N) " yn
+              case $yn in
+                [Yy]* ) usbfd_=$(readlink -f ${devlink})
+                        sudo umount $usbfd_
+                        echo "Done"
+                        echo; read -rsn1 -p "Press any key to continue";
+                        break;;
+                [Nn]* ) break;;
+                    * ) echo -e "\033[31mPlease answer yes or no.\033[0m";;
+              esac
+            done
+          fi
+
+        elif [[ $selected_delete_choice == 'Back' ]]
+        then
+          break
+        fi
+      done
+
+    elif [[ $selected_delete_choice == 'Back' ]]
+    then
+      break
+    fi
+  done
+}
+
 os_id=$(lsb_release -si)
 
 #----- Ubuntu ----------------------------------------
@@ -643,7 +729,7 @@ then
   main_menu_=$(echo -e "\033[4mMain menu\033[0m")
   while true; do
     clear -x
-    selections=("Update upgrade" "Utilities" "Change hostname" "Network settings" "Routes" "Firewall settings" "Date and Time" "Exit")
+    selections=("Update upgrade" "Utilities" "Change hostname" "Network settings" "Routes" "Firewall settings" "Date and Time" "Storage devices" "Exit")
     choose_from_menu "$main_menu_" selected_choice "${selections[@]}"; echo;
     echo "Selected choice: $selected_choice"
     if [[ $selected_choice == 'Update upgrade' ]]
@@ -716,6 +802,10 @@ then
     then
       #---- DateTime ----
       func_datetime
+	elif [[ $selected_choice == 'Storage devices' ]]
+    then
+	  #---- Storage devices ----
+	  func_storage_devices
     else
       break
     fi
